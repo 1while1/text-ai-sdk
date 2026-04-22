@@ -296,7 +296,50 @@ SDK 使用类型化错误模型。
 
 ---
 
-## 10. 适用与不适用场景
+## 10. 如何公开使用这个 SDK
+
+当前这个 SDK 已经放在公开 GitHub 仓库中，如果你想让其他 Java 项目快速接入，推荐优先使用 JitPack。
+
+### 10.1 JitPack 接入方式
+
+先在 Maven 项目中添加仓库：
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+
+然后添加依赖：
+
+```xml
+<dependency>
+    <groupId>com.github.1while1</groupId>
+    <artifactId>text-ai-sdk</artifactId>
+    <version>v0.1.0</version>
+</dependency>
+```
+
+JitPack 页面：
+
+- [https://jitpack.io/#1while1/text-ai-sdk](https://jitpack.io/#1while1/text-ai-sdk)
+
+### 10.2 为什么当前推荐 JitPack
+
+因为它满足这些特点：
+
+- 不需要先走 Maven Central 的完整发布流程
+- 只要 GitHub 仓库公开即可
+- 非常适合 SDK 早期公开试用和版本验证
+
+如果你后续要面向更正式的公开发布，再考虑 Maven Central 会更合适。
+
+---
+
+## 11. 适用与不适用场景
 
 适合：
 
@@ -314,7 +357,7 @@ SDK 使用类型化错误模型。
 
 ---
 
-## 11. 继续阅读
+## 12. 继续阅读
 
 - [零基础教学文档](text-ai-sdk-beginner-tutorial.md)
 - [详细使用指南](text-ai-sdk-guide.md)

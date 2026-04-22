@@ -4,6 +4,7 @@
 [![Maven](https://img.shields.io/badge/Maven-ready-c71a36)](https://maven.apache.org/)
 [![协议](https://img.shields.io/badge/OpenAI-compatible-0a7f5a)](#)
 [![范围](https://img.shields.io/badge/Text-only-444444)](#)
+[![JitPack](https://jitpack.io/v/1while1/text-ai-sdk.svg)](https://jitpack.io/#1while1/text-ai-sdk)
 
 `text-ai-sdk` 是一个面向 Java 的轻量级纯文本 SDK，用来通过 OpenAI 风格 HTTP 接口发起文本请求、接收文本回答。
 
@@ -180,6 +181,41 @@ public class StreamQuickStart {
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
+
+如果你希望通过公开 Git 仓库直接使用这个 SDK，推荐使用 JitPack。
+
+### 5.1 通过 GitHub + JitPack 使用
+
+先添加 JitPack 仓库：
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+
+然后添加依赖：
+
+```xml
+<dependency>
+    <groupId>com.github.1while1</groupId>
+    <artifactId>text-ai-sdk</artifactId>
+    <version>v0.1.0</version>
+</dependency>
+```
+
+JitPack 页面：
+
+- [https://jitpack.io/#1while1/text-ai-sdk](https://jitpack.io/#1while1/text-ai-sdk)
+
+适合场景：
+
+- 你想直接从公开 GitHub 仓库使用 SDK
+- 你还没有发布到 Maven Central
+- 你希望先用最轻量的公开分发方式验证 SDK 可用性
 
 ---
 
