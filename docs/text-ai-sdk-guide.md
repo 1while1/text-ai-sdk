@@ -408,6 +408,3 @@ TextAiClientConfig config = TextAiClientConfig.builder()
 - [零基础教学文档](text-ai-sdk-beginner-tutorial.md)
 - [中文通用文档](text-ai-sdk-general-guide-zh.md)
 - [兼容性示例说明](text-ai-sdk-compatibility-examples.md)
-- [发布检查清单](text-ai-sdk-release-checklist.md)
-- [下一阶段 backlog](text-ai-sdk-backlog.md)
-

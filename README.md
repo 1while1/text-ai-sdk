@@ -1,17 +1,22 @@
 # Text AI SDK
 
+[![Java](https://img.shields.io/badge/Java-17%2B-2f7ed8)](https://www.oracle.com/java/)
+[![Maven](https://img.shields.io/badge/Maven-ready-c71a36)](https://maven.apache.org/)
+[![协议](https://img.shields.io/badge/OpenAI-compatible-0a7f5a)](#)
+[![范围](https://img.shields.io/badge/Text-only-444444)](#)
+
 `text-ai-sdk` 是一个面向 Java 的轻量级纯文本 SDK，用来通过 OpenAI 风格 HTTP 接口发起文本请求、接收文本回答。
 
-它当前专注一件事：
+它当前只专注一件事：
 
 > 用简单、稳定、可控的方式完成纯文本问答调用。
 
-当前支持的协议入口：
+支持的协议入口：
 
 - `/v1/responses`
 - `/v1/chat/completions`
 
-当前支持的调用形态：
+支持的调用形态：
 
 - 非流式
 - 流式
@@ -20,62 +25,39 @@
 
 ---
 
-## 1. 这个 SDK 适合什么场景
+## 1. 为什么用它
 
-适合：
-
-- 普通聊天问答
-- 文本生成、润色、翻译、总结
-- Java 后端中的纯文本模型调用
-- 桌面程序或 GUI 工具中的文本能力接入
-- 自建网关、代理层、OpenAI-compatible 服务的文本对接
-- RAG 系统中的生成层
-
-不适合：
-
-- tool calling
-- 多模态输入输出
-- 结构化输出协议
-- agent 编排
-- 记忆、工作流、RAG 全链路框架
-
-如果你未来要做这些能力，建议以当前 SDK 作为“文本能力底座”，再拆出新的能力包。
-
----
-
-## 2. 它和其他 SDK 的关系
-
-这个 SDK 不是要替代：
+这个 SDK 不试图替代：
 
 - OpenAI 官方 Java SDK
 - Spring AI
 - LangChain4j
 
-它的定位更窄、更轻：
+它的定位更轻、更窄：
 
 > 一个面向 Java 的纯文本门面，专门解决 OpenAI-compatible 文本调用体验问题。
 
-你可以把它理解成：
+适合你在这些场景使用：
 
-- 官方 SDK：底层客户端
-- Spring AI / LangChain4j：框架和编排层
-- `text-ai-sdk`：纯文本调用门面
+- 普通聊天问答
+- 文本生成、翻译、润色、总结
+- Java 后端中的纯文本模型调用
+- GUI / 桌面程序中的文本能力接入
+- OpenAI-compatible 网关或代理层接入
+- RAG 系统中的生成层
+
+当前明确不做：
+
+- tool calling
+- 多模态输入输出
+- 结构化输出协议
+- agent 编排
 
 ---
 
-## 3. 30 秒快速开始
+## 2. 最短可复制示例
 
-### 3.1 Maven 依赖
-
-```xml
-<dependency>
-    <groupId>com.textai</groupId>
-    <artifactId>text-ai-sdk</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-</dependency>
-```
-
-### 3.2 最小非流式示例
+### 非流式
 
 ```java
 import com.textai.sdk.text.TextAiClient;
@@ -89,22 +71,19 @@ public class QuickStart {
                 "gpt-5.4"
         );
 
-        TextResponse response = client.chat(
-                "你是一个专业、简洁的助手。",
-                "请介绍一下你自己。"
-        );
+        TextResponse response = client.chat("请介绍一下你自己。");
 
         if (response.isSuccess()) {
-            System.out.println("回答: " + response.getText());
+            System.out.println(response.getText());
         } else {
-            System.out.println("失败类型: " + response.getError().getType());
-            System.out.println("失败信息: " + response.getError().getMessage());
+            System.out.println(response.getError().getType());
+            System.out.println(response.getError().getMessage());
         }
     }
 }
 ```
 
-### 3.3 最小流式示例
+### 流式
 
 ```java
 import com.textai.sdk.text.TextAiClient;
@@ -119,7 +98,6 @@ public class StreamQuickStart {
         );
 
         TextStreamResponse response = client.stream(
-                "你是一个专业、简洁的助手。",
                 "请流式介绍一下你自己。",
                 delta -> {
                     System.out.print(delta);
@@ -135,22 +113,18 @@ public class StreamQuickStart {
 
 ---
 
-## 4. 怎么看当前请求属于哪一种方式
+## 3. 一眼看懂怎么调用
 
 这个 SDK 有两个维度：
 
-### 4.1 协议维度
-
-由创建客户端的方法决定：
+### 3.1 先看协议
 
 - `TextAiClient.forResponses(...)`
   - 底层走 `/v1/responses`
 - `TextAiClient.forChatCompletions(...)`
   - 底层走 `/v1/chat/completions`
 
-### 4.2 流式维度
-
-由调用的方法名决定：
+### 3.2 再看是否流式
 
 - `chat(...)` / `chatAsync(...)`
   - 非流式
@@ -162,12 +136,12 @@ public class StreamQuickStart {
 一句话记忆：
 
 - 看 `forResponses / forChatCompletions`：判断协议
-- 看 `chat / stream`：判断是否流式
-- 看 `Async`：判断是否异步
+- 看 `chat / stream`：判断是不是流式
+- 看 `Async`：判断是不是异步
 
 ---
 
-## 5. 常用公开 API
+## 4. 常用公开 API
 
 核心类型：
 
@@ -197,7 +171,19 @@ public class StreamQuickStart {
 
 ---
 
-## 6. 适合公开接入的能力边界
+## 5. Maven 依赖
+
+```xml
+<dependency>
+    <groupId>com.textai</groupId>
+    <artifactId>text-ai-sdk</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+
+---
+
+## 6. 适用边界
 
 当前版本已经支持：
 
@@ -209,14 +195,12 @@ public class StreamQuickStart {
 - 流式生命周期监听
 - 响应元数据提取
 - 非流式瞬时错误重试
-- 示例套件
+- provider / gateway 示例套件
 
-当前明确不做：
+如果你未来要做：
 
-- tool calling
-- multimodal
-- structured output
-- agent workflow
+- RAG：这个 SDK 适合作为生成层
+- Agent：这个 SDK 适合作为文本能力底座
 
 ---
 
@@ -226,9 +210,7 @@ public class StreamQuickStart {
 - [零基础教学文档](docs/text-ai-sdk-beginner-tutorial.md)
 - [详细使用指南](docs/text-ai-sdk-guide.md)
 - [兼容性示例说明](docs/text-ai-sdk-compatibility-examples.md)
-- [下一阶段 backlog](docs/text-ai-sdk-backlog.md)
-- [发布检查清单](docs/text-ai-sdk-release-checklist.md)
-- [变更记录](CHANGELOG.md)
+- [更新记录](CHANGELOG.md)
 
 ---
 
@@ -238,13 +220,13 @@ public class StreamQuickStart {
 
 - `mvn test` 可用于验证
 - `mvn package` 可生成主 jar、sources jar、javadoc jar
-- 公开发布前仍建议补齐维护者元数据，例如 license、SCM、最终版本号
+- 如果未来要发布到公共 Maven 仓库，仍建议补齐 license、SCM、最终版本号等维护者元数据
 
 ---
 
 ## 9. 代码结构
 
-当前单模块源码按职责拆分为：
+当前源码按职责拆分为：
 
 - `com.textai.sdk.text`
   - 面向调用方的纯文本 API
@@ -255,5 +237,4 @@ public class StreamQuickStart {
 - `com.textai.sdk.openai`
   - OpenAI 风格协议映射与解析
 
-这套结构方便后续继续演进出更多能力包，同时不破坏当前 `TextAiClient` 的纯文本定位。
-
+这套结构方便后续继续扩展更多能力包，同时不破坏当前 `TextAiClient` 的纯文本定位。

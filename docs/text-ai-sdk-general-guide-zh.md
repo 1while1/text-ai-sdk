@@ -319,6 +319,3 @@ SDK 使用类型化错误模型。
 - [零基础教学文档](text-ai-sdk-beginner-tutorial.md)
 - [详细使用指南](text-ai-sdk-guide.md)
 - [兼容性示例说明](text-ai-sdk-compatibility-examples.md)
-- [发布检查清单](text-ai-sdk-release-checklist.md)
-- [后续任务清单](text-ai-sdk-backlog.md)
-
