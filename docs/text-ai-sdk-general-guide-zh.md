@@ -319,7 +319,7 @@ SDK 使用类型化错误模型。
 <dependency>
     <groupId>com.github.1while1</groupId>
     <artifactId>text-ai-sdk</artifactId>
-    <version>v0.1.0</version>
+    <version>v0.1.2</version>
 </dependency>
 ```
 
