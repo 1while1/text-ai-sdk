@@ -1,63 +1,62 @@
-# Text AI SDK Guide
+# Text AI SDK 详细使用指南
 
-## 1. Overview
+## 1. 文档定位
 
-`text-ai-sdk` is a pure-text Java SDK that talks to OpenAI-style HTTP APIs while keeping its public API intentionally narrow.
+这份文档用于系统说明 `text-ai-sdk` 的公开能力、配置方式、调用方式和常见用法。
 
-If you are completely new to this SDK, read this first:
+如果你是第一次接触这个 SDK，建议先看：
 
-- `docs/text-ai-sdk-beginner-tutorial.md`
+- [零基础教学文档](text-ai-sdk-beginner-tutorial.md)
 
-It currently supports:
+如果你希望快速了解 SDK 的整体定位，也可以先看：
 
-- non-stream text requests
-- stream text requests
-- synchronous calls
-- asynchronous calls
+- [中文通用文档](text-ai-sdk-general-guide-zh.md)
+
+---
+
+## 2. SDK 简介
+
+`text-ai-sdk` 是一个面向 Java 的纯文本调用 SDK，用来通过 OpenAI 风格 HTTP 接口完成文本请求和文本回答。
+
+当前支持：
+
+- 非流式文本请求
+- 流式文本请求
+- 同步调用
+- 异步调用
 - `/v1/chat/completions`
 - `/v1/responses`
 
-It does not currently support:
+当前不支持：
 
 - tool calling
-- multimodal inputs
-- structured outputs
+- 多模态输入输出
+- 结构化输出协议
 
-Those capabilities are intentionally excluded so the text client can stay simple and predictable.
+这些能力被有意排除在当前模块之外，以保持文本门面的简单性和稳定性。
 
-## 2. Design Philosophy
+---
 
-The package is built around one core rule:
+## 3. 设计原则
 
-`TextAiClient` is a pure-text facade, not a generic OpenAI SDK.
+这个 SDK 的核心原则是：
 
-That means:
+> `TextAiClient` 是纯文本门面，不是一个全功能 OpenAI SDK。
 
-- the public request model is optimized for text use cases
-- the SDK rejects non-text protocol shapes explicitly
-- the internals are layered so future capability packages can reuse transport and protocol logic
+这意味着：
 
-## 2.1 Product Positioning
+- 公共请求模型以文本场景为中心
+- 非文本响应会明确失败
+- 流式协议异常会明确失败
+- 内部实现按职责分层，便于未来拆分更多能力包
 
-The package sits between low-level provider SDKs and heavier AI application frameworks.
+---
 
-It is not trying to be:
+## 4. 包结构
 
-- a full OpenAI Java SDK replacement
-- a Spring AI style framework abstraction
-- a LangChain-style orchestration toolkit
+### 4.1 `com.textai.sdk.text`
 
-It is trying to be:
-
-> a lightweight, strict, OpenAI-compatible text facade for Java applications
-
-This positioning matters because it explains why the public API stays narrow and why non-text responses fail instead of being loosely tolerated.
-
-## 3. Package Structure
-
-### `com.textai.sdk.text`
-
-Public text-facing API.
+面向业务调用方的纯文本 API：
 
 - `TextAiClient`
 - `TextAiClientConfig`
@@ -65,39 +64,43 @@ Public text-facing API.
 - `TextResponse`
 - `TextStreamResponse`
 - `DeltaCallback`
+- `TextStreamListener`
+- `TextStreamUsage`
 
-Use this package first when integrating the SDK.
+### 4.2 `com.textai.sdk.error`
 
-### `com.textai.sdk.error`
-
-Shared typed error model.
+统一错误模型：
 
 - `AiError`
 - `AiErrorType`
 
-### `com.textai.sdk.core`
+### 4.3 `com.textai.sdk.core`
 
-Cross-cutting helpers that are not text-specific.
+与具体文本协议无关的公共基础能力：
 
-- `core.http.UrlResolver`
-- `core.stream.StreamCallbackDispatcher`
-- `core.stream.StreamPayloadBatch`
-- `core.util.JsonUtils`
+- URL 解析
+- HTTP 请求构建
+- SSE 处理
+- JSON 辅助逻辑
 
-### `com.textai.sdk.openai`
+### 4.4 `com.textai.sdk.openai`
 
-OpenAI-style protocol support for the text client.
+OpenAI 风格协议相关能力：
 
 - `TextApiMode`
-- request mapping
-- non-stream parsing
-- stream parsing
+- 请求映射
+- 非流式解析
+- 流式解析
 
-## 4. Public API
+---
 
-### 4.1 Factory startup
+## 5. 启动方式
 
-Use a factory when you want the smallest amount of setup:
+### 5.1 工厂方法启动
+
+这是最简单的接入方式。
+
+走 `/v1/responses`：
 
 ```java
 TextAiClient client = TextAiClient.forResponses(
@@ -107,7 +110,7 @@ TextAiClient client = TextAiClient.forResponses(
 );
 ```
 
-or:
+走 `/v1/chat/completions`：
 
 ```java
 TextAiClient client = TextAiClient.forChatCompletions(
@@ -117,27 +120,30 @@ TextAiClient client = TextAiClient.forChatCompletions(
 );
 ```
 
-### 4.2 Full configuration
+### 5.2 使用完整配置对象
 
-Use `TextAiClientConfig` when you need more control:
+当你需要更多控制时，使用 `TextAiClientConfig`：
 
 ```java
 TextAiClientConfig config = TextAiClientConfig.builder()
         .baseUrl("http://127.0.0.1:48760")
         .apiKey(System.getenv("AI_API_KEY"))
         .defaultModel("gpt-5.4")
-        .defaultSystemPrompt("You are a helpful assistant.")
+        .defaultSystemPrompt("你是一个专业助手。")
         .apiMode(TextApiMode.RESPONSES)
         .connectTimeoutSeconds(30)
         .readTimeoutSeconds(120)
+        .maxRetries(2)
         .build();
 
 TextAiClient client = new TextAiClient(config);
 ```
 
-### 4.2.1 Transport customization for OpenAI-compatible providers
+---
 
-When an OpenAI-compatible provider needs a custom path, query parameter, or extra headers, keep using `TextAiClientConfig` instead of changing the text request model.
+## 6. 网关与 OpenAI-compatible 配置
+
+如果你的服务不是标准公开端点，而是自定义网关、代理层或 Azure 风格兼容层，可以在配置对象上调整传输层参数，而不用污染文本请求模型。
 
 ```java
 TextAiClientConfig config = TextAiClientConfig.builder()
@@ -151,22 +157,37 @@ TextAiClientConfig config = TextAiClientConfig.builder()
         .build();
 ```
 
-These settings are useful for:
+适用场景：
 
-- provider-specific routing
-- gateway-specific headers
-- compatibility parameters that should apply to every request
+- provider 自定义路径
+- 网关附加 header
+- 兼容层需要固定 query 参数
 
-They are intentionally transport-scoped, not request-scoped.
+---
 
-### 4.3 Request object usage
+## 7. 非流式调用
 
-Use `TextRequest` when you need request-level control:
+### 7.1 最短写法
+
+```java
+TextResponse response = client.chat("你好，请介绍一下你自己。");
+```
+
+### 7.2 显式传入 system prompt
+
+```java
+TextResponse response = client.chat(
+        "你是一个专业、简洁的助手。",
+        "请介绍一下你自己。"
+);
+```
+
+### 7.3 使用 `TextRequest`
 
 ```java
 TextRequest request = TextRequest.builder()
-        .systemPrompt("You are a helpful assistant.")
-        .userInput("Write a short greeting.")
+        .systemPrompt("你是一个专业、简洁的助手。")
+        .userInput("请介绍一下你自己。")
         .temperature(0)
         .maxTokens(256)
         .build();
@@ -174,54 +195,33 @@ TextRequest request = TextRequest.builder()
 TextResponse response = client.chat(request);
 ```
 
-### 4.4 Convenience overload usage
+---
 
-Use overloads when you want the shortest call site:
+## 8. 流式调用
 
-```java
-TextResponse response = client.chat("Hello");
-TextResponse response2 = client.chat("You are concise.", "Explain what you do.");
-```
+### 8.1 使用 `DeltaCallback`
 
-If `defaultSystemPrompt` is configured, the one-argument methods will automatically reuse it.
-
-## 5. Sync and Async APIs
-
-### Synchronous
-
-```java
-TextResponse response = client.chat("Hello");
-TextStreamResponse streamResponse = client.stream(
-        "Give me a short greeting.",
-        delta -> System.out.print(delta)
-);
-```
-
-### Asynchronous
-
-```java
-client.chatAsync("Hello")
-        .thenAccept(response -> {
-            if (response.isSuccess()) {
-                System.out.println(response.getText());
-            }
-        });
-```
-
-```java
-client.streamAsync("Stream a short greeting.", delta -> {
-    System.out.print(delta);
-    System.out.flush();
-});
-```
-
-## 6. Streaming Model
-
-Streaming callbacks are text-only.
+适合直接打印增量文本：
 
 ```java
 TextStreamResponse response = client.stream(
-        "Write a short message.",
+        "请流式介绍一下你自己。",
+        delta -> {
+            System.out.print(delta);
+            System.out.flush();
+        }
+);
+
+System.out.println();
+System.out.println("完整回答: " + response.getFullText());
+```
+
+### 8.2 流式请求也可以传 `systemPrompt`
+
+```java
+TextStreamResponse response = client.stream(
+        "你是一个专业、简洁的助手。",
+        "请流式介绍一下你自己。",
         delta -> {
             System.out.print(delta);
             System.out.flush();
@@ -229,23 +229,17 @@ TextStreamResponse response = client.stream(
 );
 ```
 
-Behavior:
+### 8.3 使用 `TextStreamListener`
 
-- deltas are emitted as plain strings
-- the final `TextStreamResponse` contains the full accumulated text
-- responses-style streams also surface the last observed event type
-
-### 6.1 Lifecycle listener
-
-When plain delta delivery is not enough, use `TextStreamListener`.
+当你不仅需要增量文本，还需要开始、完成、usage、错误等生命周期事件时，使用 listener。
 
 ```java
 TextStreamResponse response = client.streamWithListener(
-        "Write a short message.",
+        "请流式介绍一下你自己。",
         new TextStreamListener() {
             @Override
             public void onStart() {
-                System.out.println("started");
+                System.out.println("开始流式输出");
             }
 
             @Override
@@ -255,95 +249,147 @@ TextStreamResponse response = client.streamWithListener(
 
             @Override
             public void onUsage(TextStreamUsage usage) {
-                System.out.println("\\nusage total=" + usage.totalTokens());
+                System.out.println();
+                System.out.println("token 总数: " + usage.totalTokens());
             }
 
             @Override
             public void onComplete(TextStreamResponse response) {
-                System.out.println("\\ncomplete");
-            }
-
-            @Override
-            public void onError(com.textai.sdk.error.AiError error, String partialText, String lastEventType) {
-                System.out.println("\\nfailed: " + error.getType());
+                System.out.println();
+                System.out.println("流式完成");
             }
         }
 );
 ```
 
-The listener currently exposes:
+---
 
-- `onStart()`
-- `onDelta(String delta)`
-- `onUsage(TextStreamUsage usage)`
-- `onComplete(TextStreamResponse response)`
-- `onError(AiError error, String partialText, String lastEventType)`
+## 9. 异步调用
 
-Use `DeltaCallback` when you only care about text chunks. Use `TextStreamListener` when you need lifecycle visibility. The listener API intentionally uses `streamWithListener(...)` and `streamAsyncWithListener(...)` so literal `null` arguments cannot collide with `DeltaCallback` overloads.
-
-## 7. Error Handling
-
-All failures use `AiError`.
-
-Example:
+### 9.1 非流式异步
 
 ```java
-TextResponse response = client.chat("Hello");
-if (!response.isSuccess()) {
-    System.out.println(response.getError().getType());
-    System.out.println(response.getError().getMessage());
-}
+client.chatAsync("你好，请介绍一下你自己。")
+        .thenAccept(response -> {
+            if (response.isSuccess()) {
+                System.out.println(response.getText());
+            } else {
+                System.out.println(response.getError().getMessage());
+            }
+        });
 ```
 
-Important categories:
+### 9.2 流式异步
+
+```java
+client.streamAsync(
+        "请流式介绍一下你自己。",
+        delta -> {
+            System.out.print(delta);
+            System.out.flush();
+        }
+).thenAccept(response -> {
+    System.out.println();
+    System.out.println("完整回答: " + response.getFullText());
+});
+```
+
+### 9.3 异步 listener
+
+```java
+client.streamAsyncWithListener(
+        "请流式介绍一下你自己。",
+        new TextStreamListener() {
+            @Override
+            public void onDelta(String delta) {
+                System.out.print(delta);
+            }
+        }
+);
+```
+
+---
+
+## 10. 线程说明
+
+- `chatAsync()` 和 `streamAsync()` 基于 OkHttp 的异步调用
+- 如果配置了 `callbackExecutor`，流式回调会切换到该 executor
+- 如果没有配置，流式回调默认运行在 OkHttp 工作线程
+- GUI 场景下，如果你要更新界面控件，应自行切回 UI 线程
+
+---
+
+## 11. 错误模型
+
+SDK 使用类型化错误，而不是仅返回字符串消息。
+
+常见错误类型包括：
 
 - `VALIDATION_ERROR`
-  Missing required client or request data
 - `NETWORK_ERROR`
-  Transport failure
 - `HTTP_ERROR`
-  Upstream returned a non-2xx response
 - `PARSE_ERROR`
-  Upstream returned a body that did not match the expected JSON shape
+- `EMPTY_RESPONSE`
+- `EMPTY_CHOICES`
+- `MISSING_MESSAGE`
 - `UNSUPPORTED_NON_TEXT_RESPONSE`
-  Upstream returned a non-text result shape
 - `STREAM_PROTOCOL_ERROR`
-  Stream payload was malformed or unsupported
 - `CANCELLED`
-  Caller cancelled the async request
 
-## 7.1 Response metadata
+你可以通过：
 
-Successful text results also expose lightweight provider metadata:
+```java
+response.getError()
+```
+
+读取错误对象，再通过：
+
+```java
+response.getError().getType()
+response.getError().getMessage()
+```
+
+获取错误类型和错误信息。
+
+---
+
+## 12. 响应元数据
+
+非流式和流式结果对象都支持读取轻量元数据：
 
 - `getResponseId()`
 - `getModel()`
 - `getRawHeaders()`
 
-These fields are intentionally small and read-only. They help with:
+适用场景：
 
-- correlating SDK results with upstream request IDs
-- confirming which model a gateway actually used
-- capturing provider headers for debugging and audit trails
+- 排查网关行为
+- 对接 provider request ID
+- 记录真实响应模型
 
-Example:
+示例：
 
 ```java
-TextResponse response = client.chat("Hello");
+TextResponse response = client.chat("你好");
 if (response.isSuccess()) {
-    System.out.println(response.getResponseId());
-    System.out.println(response.getModel());
-    System.out.println(response.getRawHeaders());
+    System.out.println("responseId=" + response.getResponseId());
+    System.out.println("model=" + response.getModel());
+    System.out.println("headers=" + response.getRawHeaders());
 }
 ```
 
-`TextStreamResponse` exposes the same metadata for stream calls.
+---
 
-## 7.2 Retry policy
+## 13. 重试策略
 
-The SDK now provides a narrow, opt-in retry policy for transient non-stream failures.
+SDK 支持可选的非流式重试策略：
 
-Configure it on `TextAiClientConfig`:
+- 通过 `maxRetries(int)` 配置
+- 仅作用于非流式请求
+- 对瞬时网络错误、`429`、`5xx` 生效
+- 不对流式请求生效
+
+示例：
 
 ```java
 TextAiClientConfig config = TextAiClientConfig.builder()
@@ -355,136 +401,13 @@ TextAiClientConfig config = TextAiClientConfig.builder()
         .build();
 ```
 
-Behavior in the current version:
+---
 
-- retries apply to `chat(...)` and `chatAsync(...)`
-- retries do not apply to `stream(...)` or `streamAsync(...)`
-- retries are attempted for transient network failures
-- retries are attempted for HTTP `429` and HTTP `5xx`
-- retries are not attempted for HTTP `4xx` client errors such as `400`
-- `maxRetries(0)` is the default and disables retries
+## 14. 示例与扩展阅读
 
-This keeps the first resilience layer predictable without replaying streams automatically.
+- [零基础教学文档](text-ai-sdk-beginner-tutorial.md)
+- [中文通用文档](text-ai-sdk-general-guide-zh.md)
+- [兼容性示例说明](text-ai-sdk-compatibility-examples.md)
+- [发布检查清单](text-ai-sdk-release-checklist.md)
+- [下一阶段 backlog](text-ai-sdk-backlog.md)
 
-## 8. Threading and GUI Use
-
-Async APIs use OkHttp async execution.
-
-For stream callbacks:
-
-- if `callbackExecutor` is configured, callbacks run on that executor
-- otherwise callbacks run on OkHttp worker threads
-- the same rule applies to `DeltaCallback` and `TextStreamListener`
-
-This matters for GUI frameworks:
-
-- Swing, JavaFX, Android, and similar UI stacks require you to marshal updates onto the UI thread
-
-## 9. Cancellation
-
-Async methods return `CompletableFuture`.
-
-Calling:
-
-```java
-future.cancel(true);
-```
-
-will also cancel the underlying OkHttp `Call`.
-
-This is important for:
-
-- GUI screens that are closing
-- request abandonment
-- user-triggered stop actions
-
-## 10. Protocol Compatibility Boundary
-
-The SDK already speaks OpenAI-style protocol shapes internally, but only for text workflows.
-
-That means the package is:
-
-- compatible with OpenAI-style text request/response patterns
-- not yet a general-purpose OpenAI SDK
-
-This is intentional. Future capability packages can reuse the internal layering without bloating the pure-text facade.
-
-## 10.1 RAG and Agent Usage
-
-### RAG
-
-This SDK is a good fit for the generation layer of a RAG system.
-
-A typical RAG stack still needs:
-
-- retrieval
-- context assembly
-- prompt composition
-- text generation
-
-`TextAiClient` can cleanly own the final text generation step.
-
-### Agent
-
-This SDK is only a partial fit for agent systems.
-
-It can be used as:
-
-- the text generation layer inside an agent
-
-It should not be treated as:
-
-- the full agent runtime
-
-Agent-specific features such as tool invocation, action planning, structured tool arguments, and iterative control loops should live in separate packages later.
-
-## 11. Extension Strategy
-
-The current layering is designed so later packages can be added without replacing `TextAiClient`.
-
-Planned extension direction:
-
-- pure text package stays focused
-- future tool/multimodal/structured packages reuse:
-  - error model
-  - URL resolution
-  - JSON helpers
-  - stream normalization
-  - protocol mapping patterns
-
-The intended long-term package family looks like:
-
-- `text-ai-sdk`
-- a future tool-calling package
-- a future multimodal package
-- a future structured-output package
-
-Those packages should share the same core protocol and transport foundations instead of duplicating them.
-
-## 12. Source Code Notes
-
-The SDK source is heavily commented on purpose.
-
-The comments are meant to help readers understand:
-
-- where the public text boundary is
-- which code is transport-related
-- which code is protocol-specific
-- why strict text-only failures are intentional
-
-## 13. Demo Entry Point
-
-For a runnable example that shows the main calling styles in one place, see:
-
-- `src/main/java/com/textai/sdk/demo/TextAiClientDemo.java`
-- `docs/text-ai-sdk-compatibility-examples.md`
-
-The demo covers:
-
-- synchronous text request
-- synchronous delta streaming
-- asynchronous text request
-- asynchronous lifecycle-listener streaming
-
-The compatibility example suite complements the main demo with smaller files
-that each focus on one OpenAI-compatible integration scenario.

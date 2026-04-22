@@ -1,80 +1,81 @@
-# Text AI SDK Backlog
+# Text AI SDK 后续任务清单
 
-## Priority Order
+## 优先级顺序
 
-### P1. OpenAI-compatible transport customization
+### P1. OpenAI-compatible 传输层定制
 
-**Why first**
+**为什么最优先**
 
-This has the biggest payoff for future provider compatibility while still keeping the package pure-text.
+这项能力对未来兼容更多 provider 和网关的收益最大，同时又不会破坏纯文本定位。
 
-**Scope**
+**范围**
 
-- custom endpoint path override
-- extra query parameters
-- extra request headers
+- 自定义 endpoint path
+- 额外 query 参数
+- 额外请求头
 
-**Value**
+**价值**
 
-- easier integration with OpenAI-compatible gateways
-- better support for provider-specific routing details
-- cleaner migration path toward broader OpenAI protocol compatibility
+- 更容易接入 OpenAI-compatible 网关
+- 更好支持 provider 特定路由细节
+- 为后续更广的 OpenAI 协议兼容打基础
 
-### P2. Stream lifecycle listener
+### P2. 流式生命周期监听器
 
-**Scope**
+**范围**
 
-- keep `DeltaCallback`
-- add an optional richer listener with lifecycle hooks such as:
-  - start
-  - delta
-  - complete
-  - error
+- 保留 `DeltaCallback`
+- 增加可选的 richer listener，支持：
+  - 开始
+  - 增量文本
+  - 完成
+  - 错误
   - usage
 
-**Value**
+**价值**
 
-- better GUI integration
-- cleaner stream instrumentation
-- easier future support for richer OpenAI-compatible stream metadata
+- 更适合 GUI 集成
+- 更利于流式过程观测
+- 为以后支持更丰富的流式元数据打基础
 
-### P3. Response metadata enrichment
+### P3. 响应元数据增强
 
-**Scope**
+**范围**
 
-- expose response ID
-- expose model name
-- expose raw headers or selected provider metadata
+- 暴露 response ID
+- 暴露模型名
+- 暴露原始响应头或 provider 元数据
 
-**Value**
+**价值**
 
-- better debugging
-- easier auditing
-- clearer interoperability with different providers
+- 更利于排障
+- 更便于审计
+- 更清楚不同 provider 的兼容行为
 
-### P4. Retry and resilience policy
+### P4. 重试与韧性策略
 
-**Scope**
+**范围**
 
-- configurable retries for transient failures
-- retry-safe boundaries
-- explicit handling for 429/5xx classes
+- 对瞬时错误提供可配置重试
+- 明确重试边界
+- 对 `429` 和 `5xx` 类错误做显式策略
 
-**Value**
+**价值**
 
-- stronger production readiness
-- fewer temporary failures leaking into callers
+- 更适合生产场景
+- 减少临时错误直接泄露给调用方
 
-### P5. Compatibility example suite
+### P5. 兼容性示例套件
 
-**Scope**
+**范围**
 
-- provider-focused examples
-- gateway-focused examples
-- more documented request/response variations
+- provider 示例
+- gateway 示例
+- 更多请求/响应变体说明
 
-**Value**
+**价值**
 
-- easier adoption
-- clearer OpenAI-compatible story
-- lower integration cost for users
+- 更容易上手
+- 更容易理解 OpenAI-compatible 接入方式
+- 降低集成成本
+

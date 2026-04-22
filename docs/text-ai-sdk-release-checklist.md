@@ -1,68 +1,81 @@
-# Text AI SDK Release Checklist
+# Text AI SDK 发布检查清单
 
-Use this checklist before publishing `text-ai-sdk` outside the local workspace.
+在将 `text-ai-sdk` 对外发布之前，请先完成这份检查清单。
 
-## 1. Pre-release validation
+---
 
-- confirm the README still matches the public API
-- confirm the compatibility example suite still compiles and reflects current SDK behavior
-- confirm `CHANGELOG.md` includes the current snapshot or release entry
-- confirm no sample keys or local-only secrets are present in source or docs
+## 1. 发布前校验
 
-## 2. Test and build verification
+- 确认 `README.md` 仍然与公开 API 一致
+- 确认兼容性示例套件仍可编译，且反映当前 SDK 行为
+- 确认 `CHANGELOG.md` 已包含当前快照或本次发布记录
+- 确认源码和文档中不存在示例 key 或本地敏感信息
 
-Run from `standalone-text-ai-sdk`:
+---
+
+## 2. 测试与构建验证
+
+在 `standalone-text-ai-sdk` 目录下执行：
 
 ```bash
 mvn -q test
 mvn -q package
 ```
 
-Expected results:
+预期结果：
 
-- tests pass
-- the main jar is generated
-- a `-sources.jar` is generated
-- a `-javadoc.jar` is generated
+- 测试全部通过
+- 生成主 jar
+- 生成 `-sources.jar`
+- 生成 `-javadoc.jar`
 
-## 3. Maintainer-owned metadata to finalize before public publishing
+---
 
-Do not invent these values. Replace them with real project metadata first:
+## 3. 公开发布前需要维护者补齐的元数据
 
-- final release version instead of `1.0.0-SNAPSHOT`
-- license selection and license metadata
-- SCM URL and connection strings
-- developer or organization metadata
-- project homepage URL if public publishing requires one
+以下内容不要随意填写占位值，公开发布前请替换为真实信息：
 
-## 4. Artifact sanity checks
+- 最终发布版本号，而不是 `1.0.0-SNAPSHOT`
+- license 及 license 元数据
+- SCM URL 与 connection 信息
+- developer 或 organization 元数据
+- 如果发布目标需要，还应补齐项目主页 URL
 
-Verify in `target`:
+---
+
+## 4. 制品检查
+
+在 `target` 目录中确认：
 
 - `text-ai-sdk-<version>.jar`
 - `text-ai-sdk-<version>-sources.jar`
 - `text-ai-sdk-<version>-javadoc.jar`
 
-Also spot check:
+同时抽查：
 
-- README links point to existing files
-- docs do not reference deleted APIs
-- `pom.xml` still uses the intended `groupId`, `artifactId`, and Java release level
+- README 链接都能打开
+- docs 没有引用已经删除的 API
+- `pom.xml` 中的 `groupId`、`artifactId`、Java 版本仍然符合预期
 
-## 5. Publication decision
+---
 
-Before publishing, confirm:
+## 5. 发布决策前确认
 
-- the package scope is still pure text
-- retry behavior is still intentionally limited to non-stream requests
-- compatibility examples reflect the provider and gateway scenarios you want to support publicly
-- follow-up capability packages such as tool calling or multimodal support are not being advertised by this module
+发布前请再次确认：
 
-## 6. Optional release follow-ups
+- 当前包的边界仍然是“纯文本”
+- 重试行为仍然只作用于非流式请求
+- 兼容性示例仍然反映你愿意公开支持的 provider / gateway 场景
+- tool calling、多模态、结构化输出等后续能力没有在当前模块中被误宣传
 
-After a successful local package build, consider adding:
+---
 
-- signed artifacts if publishing to Maven Central
-- CI packaging workflow
-- release notes generated from `CHANGELOG.md`
-- semantic versioning policy for future package family modules
+## 6. 可选的发布后续动作
+
+在本地打包成功后，可以继续考虑：
+
+- 如果要发到 Maven Central，补充签名产物
+- 增加 CI 构建与打包流程
+- 基于 `CHANGELOG.md` 生成 release notes
+- 为后续能力包定义统一的语义化版本策略
+

@@ -1,60 +1,71 @@
 # Text AI SDK
 
-`text-ai-sdk` is a standalone Java SDK for pure text Q&A over OpenAI-style HTTP APIs.
+`text-ai-sdk` 是一个面向 Java 的轻量级纯文本 SDK，用来通过 OpenAI 风格 HTTP 接口发起文本请求、接收文本回答。
 
-Today it focuses on one thing: strict, predictable text requests over:
+它当前专注一件事：
 
-- `/v1/chat/completions`
+> 用简单、稳定、可控的方式完成纯文本问答调用。
+
+当前支持的协议入口：
+
 - `/v1/responses`
+- `/v1/chat/completions`
 
-The SDK is intentionally narrow:
+当前支持的调用形态：
 
-- it only accepts text input/output semantics
-- non-text responses fail explicitly
-- malformed stream payloads fail explicitly
-- async APIs support real cancellation through `CompletableFuture.cancel()`
+- 非流式
+- 流式
+- 同步
+- 异步
 
-## Release readiness
+---
 
-The module is now organized for local packaging and handoff:
+## 1. 这个 SDK 适合什么场景
 
-- the Maven build is kept self-contained inside `standalone-text-ai-sdk`
-- package-time artifacts are intended to include the main jar, source jar, and javadoc jar
-- maintainer-owned metadata such as license, SCM URL, and final publish coordinates should still be finalized before any public Maven release
+适合：
 
-## Positioning
+- 普通聊天问答
+- 文本生成、润色、翻译、总结
+- Java 后端中的纯文本模型调用
+- 桌面程序或 GUI 工具中的文本能力接入
+- 自建网关、代理层、OpenAI-compatible 服务的文本对接
+- RAG 系统中的生成层
 
-This package is not trying to replace:
+不适合：
 
-- the official OpenAI Java SDK as a low-level provider client
-- Spring AI as a framework-oriented integration layer
-- LangChain4j as an orchestration toolkit
+- tool calling
+- 多模态输入输出
+- 结构化输出协议
+- agent 编排
+- 记忆、工作流、RAG 全链路框架
 
-Its role is narrower:
+如果你未来要做这些能力，建议以当前 SDK 作为“文本能力底座”，再拆出新的能力包。
 
-> a lightweight Java facade for simple, strict, controllable OpenAI-compatible text calls
+---
 
-That means the package is optimized for:
+## 2. 它和其他 SDK 的关系
 
-- pure text requests
-- predictable stream handling
-- clear error boundaries
-- reuse across OpenAI-compatible gateways and providers
+这个 SDK 不是要替代：
 
-## Package Layout
+- OpenAI 官方 Java SDK
+- Spring AI
+- LangChain4j
 
-The module is still a single Maven package, but the source tree is now split by responsibility so it can later evolve into multiple publishable packages without rewriting the public text API.
+它的定位更窄、更轻：
 
-- `com.textai.sdk.text`
-  Pure-text public API
-- `com.textai.sdk.error`
-  Typed SDK errors
-- `com.textai.sdk.core`
-  Shared transport/stream/json helpers
-- `com.textai.sdk.openai`
-  OpenAI-style protocol mapping and parsing
+> 一个面向 Java 的纯文本门面，专门解决 OpenAI-compatible 文本调用体验问题。
 
-## Maven
+你可以把它理解成：
+
+- 官方 SDK：底层客户端
+- Spring AI / LangChain4j：框架和编排层
+- `text-ai-sdk`：纯文本调用门面
+
+---
+
+## 3. 30 秒快速开始
+
+### 3.1 Maven 依赖
 
 ```xml
 <dependency>
@@ -64,300 +75,185 @@ The module is still a single Maven package, but the source tree is now split by 
 </dependency>
 ```
 
-## Main Types
+### 3.2 最小非流式示例
+
+```java
+import com.textai.sdk.text.TextAiClient;
+import com.textai.sdk.text.TextResponse;
+
+public class QuickStart {
+    public static void main(String[] args) {
+        TextAiClient client = TextAiClient.forResponses(
+                "http://127.0.0.1:48760",
+                System.getenv("AI_API_KEY"),
+                "gpt-5.4"
+        );
+
+        TextResponse response = client.chat(
+                "你是一个专业、简洁的助手。",
+                "请介绍一下你自己。"
+        );
+
+        if (response.isSuccess()) {
+            System.out.println("回答: " + response.getText());
+        } else {
+            System.out.println("失败类型: " + response.getError().getType());
+            System.out.println("失败信息: " + response.getError().getMessage());
+        }
+    }
+}
+```
+
+### 3.3 最小流式示例
+
+```java
+import com.textai.sdk.text.TextAiClient;
+import com.textai.sdk.text.TextStreamResponse;
+
+public class StreamQuickStart {
+    public static void main(String[] args) {
+        TextAiClient client = TextAiClient.forResponses(
+                "http://127.0.0.1:48760",
+                System.getenv("AI_API_KEY"),
+                "gpt-5.4"
+        );
+
+        TextStreamResponse response = client.stream(
+                "你是一个专业、简洁的助手。",
+                "请流式介绍一下你自己。",
+                delta -> {
+                    System.out.print(delta);
+                    System.out.flush();
+                }
+        );
+
+        System.out.println();
+        System.out.println("完整回答: " + response.getFullText());
+    }
+}
+```
+
+---
+
+## 4. 怎么看当前请求属于哪一种方式
+
+这个 SDK 有两个维度：
+
+### 4.1 协议维度
+
+由创建客户端的方法决定：
+
+- `TextAiClient.forResponses(...)`
+  - 底层走 `/v1/responses`
+- `TextAiClient.forChatCompletions(...)`
+  - 底层走 `/v1/chat/completions`
+
+### 4.2 流式维度
+
+由调用的方法名决定：
+
+- `chat(...)` / `chatAsync(...)`
+  - 非流式
+- `stream(...)` / `streamAsync(...)`
+  - 流式
+- `streamWithListener(...)` / `streamAsyncWithListener(...)`
+  - 也是流式
+
+一句话记忆：
+
+- 看 `forResponses / forChatCompletions`：判断协议
+- 看 `chat / stream`：判断是否流式
+- 看 `Async`：判断是否异步
+
+---
+
+## 5. 常用公开 API
+
+核心类型：
 
 - `com.textai.sdk.text.TextAiClient`
 - `com.textai.sdk.text.TextAiClientConfig`
 - `com.textai.sdk.text.TextRequest`
 - `com.textai.sdk.text.TextResponse`
 - `com.textai.sdk.text.TextStreamResponse`
-- `com.textai.sdk.openai.TextApiMode`
 - `com.textai.sdk.text.DeltaCallback`
 - `com.textai.sdk.text.TextStreamListener`
 - `com.textai.sdk.text.TextStreamUsage`
+- `com.textai.sdk.openai.TextApiMode`
 - `com.textai.sdk.error.AiError`
 - `com.textai.sdk.error.AiErrorType`
 
-## Quick Start
-
-### Option 1: Minimal factory-based startup
-
-```java
-TextAiClient client = TextAiClient.forResponses(
-        "http://127.0.0.1:48760",
-        System.getenv("AI_API_KEY"),
-        "gpt-5.4"
-);
-
-TextResponse response = client.chat("Hello, please introduce yourself.");
-if (response.isSuccess()) {
-    System.out.println(response.getText());
-}
-```
-
-### Option 2: Full configuration
-
-```java
-TextAiClientConfig config = TextAiClientConfig.builder()
-        .baseUrl("http://127.0.0.1:48760")
-        .apiKey(System.getenv("AI_API_KEY"))
-        .defaultModel("gpt-5.4")
-        .defaultSystemPrompt("You are a helpful assistant.")
-        .apiMode(TextApiMode.RESPONSES)
-        .build();
-
-TextAiClient client = new TextAiClient(config);
-
-TextRequest request = TextRequest.builder()
-        .userInput("Summarize what you can help with.")
-        .maxTokens(256)
-        .build();
-
-TextResponse response = client.chat(request);
-```
-
-## Convenience Overloads
-
-For common pure-text workflows you do not need to build a `TextRequest` manually.
-
-Supported overloads include:
+常用方法：
 
 - `chat(String userInput)`
 - `chat(String systemPrompt, String userInput)`
-- `chatAsync(String userInput)`
-- `chatAsync(String systemPrompt, String userInput)`
+- `chat(TextRequest request)`
+- `chatAsync(...)`
 - `stream(String userInput, DeltaCallback callback)`
 - `stream(String systemPrompt, String userInput, DeltaCallback callback)`
-- `streamAsync(String userInput, DeltaCallback callback)`
-- `streamAsync(String systemPrompt, String userInput, DeltaCallback callback)`
-- `streamWithListener(String userInput, TextStreamListener listener)`
-- `streamWithListener(String systemPrompt, String userInput, TextStreamListener listener)`
-- `streamAsyncWithListener(String userInput, TextStreamListener listener)`
-- `streamAsyncWithListener(String systemPrompt, String userInput, TextStreamListener listener)`
+- `streamWithListener(...)`
+- `streamAsync(...)`
+- `streamAsyncWithListener(...)`
 
-If a default system prompt is configured on `TextAiClientConfig`, the single-string overloads reuse it automatically.
+---
 
-## Streaming
+## 6. 适合公开接入的能力边界
 
-```java
-TextStreamResponse response = client.stream(
-        "Give me a short greeting.",
-        delta -> {
-            System.out.print(delta);
-            System.out.flush();
-        }
-);
-```
+当前版本已经支持：
 
-For richer stream instrumentation, you can also use `TextStreamListener`:
+- 严格的纯文本输入输出约束
+- OpenAI-compatible 协议接入
+- 网关路径覆盖
+- 额外 query 参数
+- 额外请求头
+- 流式生命周期监听
+- 响应元数据提取
+- 非流式瞬时错误重试
+- 示例套件
 
-```java
-TextStreamResponse response = client.streamWithListener(
-        "Give me a short greeting.",
-        new TextStreamListener() {
-            @Override
-            public void onStart() {
-                System.out.println("stream started");
-            }
-
-            @Override
-            public void onDelta(String delta) {
-                System.out.print(delta);
-            }
-
-            @Override
-            public void onUsage(TextStreamUsage usage) {
-                System.out.println("\\nusage total=" + usage.totalTokens());
-            }
-
-            @Override
-            public void onComplete(TextStreamResponse response) {
-                System.out.println("\\nstream done");
-            }
-        }
-);
-```
-
-`DeltaCallback` remains the smallest API for plain text printing. `TextStreamListener` is the richer lifecycle-oriented option, and it uses distinct method names to avoid `null` overload ambiguity.
-
-## Async
-
-```java
-client.chatAsync("Hello")
-        .thenAccept(response -> {
-            if (response.isSuccess()) {
-                System.out.println(response.getText());
-            }
-        });
-```
-
-## Threading
-
-- `chatAsync()` and `streamAsync()` use OkHttp async calls
-- if `callbackExecutor` is configured, stream callbacks run there
-- otherwise stream callbacks run on OkHttp worker threads
-- GUI callers must marshal UI updates back to the correct UI thread
-- the same threading rule applies to both `DeltaCallback` and `TextStreamListener`
-
-## Error Model
-
-The SDK uses a typed error model instead of string-only failures.
-
-Common error types:
-
-- `VALIDATION_ERROR`
-- `NETWORK_ERROR`
-- `HTTP_ERROR`
-- `PARSE_ERROR`
-- `EMPTY_RESPONSE`
-- `EMPTY_CHOICES`
-- `MISSING_MESSAGE`
-- `UNSUPPORTED_NON_TEXT_RESPONSE`
-- `STREAM_PROTOCOL_ERROR`
-- `CANCELLED`
-
-## Response Metadata
-
-Both `TextResponse` and `TextStreamResponse` now expose lightweight provider metadata:
-
-- `getResponseId()`
-- `getModel()`
-- `getRawHeaders()`
-
-This is useful for:
-
-- debugging provider behavior
-- correlating logs with upstream request IDs
-- auditing which model actually served a request behind a gateway
-
-Example:
-
-```java
-TextResponse response = client.chat("Hello");
-if (response.isSuccess()) {
-    System.out.println("responseId=" + response.getResponseId());
-    System.out.println("model=" + response.getModel());
-    System.out.println("headers=" + response.getRawHeaders());
-}
-```
-
-## Retry policy
-
-The SDK now supports an opt-in retry policy for transient non-stream failures.
-
-Configure it with:
-
-- `maxRetries(int)`
-
-Example:
-
-```java
-TextAiClientConfig config = TextAiClientConfig.builder()
-        .baseUrl("http://127.0.0.1:48760")
-        .apiKey(System.getenv("AI_API_KEY"))
-        .defaultModel("gpt-5.4")
-        .apiMode(TextApiMode.RESPONSES)
-        .maxRetries(2)
-        .build();
-```
-
-Current retry boundaries:
-
-- retries apply to `chat(...)` and `chatAsync(...)`
-- retries do not apply to stream methods
-- retries are attempted for transient network failures
-- retries are attempted for HTTP `429` and HTTP `5xx`
-- retries are not attempted for HTTP `4xx` client errors such as `400`
-- the default is `0`, which keeps retries disabled
-
-## Cancellation
-
-Async methods return `CompletableFuture`.
-
-Calling `cancel(true)` on the returned future also cancels the underlying OkHttp `Call`.
-
-## Where It Fits
-
-### Good fit
-
-- pure text chat applications
-- desktop tools and GUI clients
-- lightweight backend services
-- OpenAI-compatible gateways and proxies
-- the generation layer of a RAG pipeline
-
-### Partial fit
-
-- agent systems
-
-The package can serve as the text generation layer inside an agent, but it is not an agent SDK. Tool calling, planning loops, and structured action handling should live in separate packages later.
-
-### Not the current goal
+当前明确不做：
 
 - tool calling
-- multimodal input/output
-- structured output contracts
-- workflow orchestration
-- RAG retrieval infrastructure
+- multimodal
+- structured output
+- agent workflow
 
-## OpenAI-Compatible Transport Customization
+---
 
-Some OpenAI-compatible providers need small transport-level tweaks without changing the pure-text API.
+## 7. 文档导航
 
-`TextAiClientConfig` now supports:
+- [中文通用文档](docs/text-ai-sdk-general-guide-zh.md)
+- [零基础教学文档](docs/text-ai-sdk-beginner-tutorial.md)
+- [详细使用指南](docs/text-ai-sdk-guide.md)
+- [兼容性示例说明](docs/text-ai-sdk-compatibility-examples.md)
+- [下一阶段 backlog](docs/text-ai-sdk-backlog.md)
+- [发布检查清单](docs/text-ai-sdk-release-checklist.md)
+- [变更记录](CHANGELOG.md)
 
-- `endpointPathOverride(...)`
-- `queryParam(...)`
-- `extraHeader(...)`
+---
 
-Example:
+## 8. 发布状态
 
-```java
-TextAiClientConfig config = TextAiClientConfig.builder()
-        .baseUrl("http://127.0.0.1:48760")
-        .apiKey(System.getenv("AI_API_KEY"))
-        .defaultModel("gpt-5.4")
-        .apiMode(TextApiMode.RESPONSES)
-        .endpointPathOverride("/openai/custom/responses")
-        .queryParam("api-version", "2025-04-01")
-        .extraHeader("X-Provider", "gateway-a")
-        .build();
-```
+当前仓库已经整理为可本地打包、可继续演进的独立 SDK 项目：
 
-These knobs are intended for OpenAI-compatible routing differences. They do not turn the package into a generic provider SDK.
+- `mvn test` 可用于验证
+- `mvn package` 可生成主 jar、sources jar、javadoc jar
+- 公开发布前仍建议补齐维护者元数据，例如 license、SCM、最终版本号
 
-## Detailed Guide
+---
 
-For a package-by-package walkthrough, architecture notes, and usage examples, see:
+## 9. 代码结构
 
-- `docs/text-ai-sdk-中文通用文档.md`
-- `docs/text-ai-sdk-beginner-tutorial.md`
-- `docs/text-ai-sdk-guide.md`
-- `docs/text-ai-sdk-backlog.md`
-- `docs/text-ai-sdk-compatibility-examples.md`
-- `docs/text-ai-sdk-release-checklist.md`
-- `CHANGELOG.md`
+当前单模块源码按职责拆分为：
 
-## Demo
+- `com.textai.sdk.text`
+  - 面向调用方的纯文本 API
+- `com.textai.sdk.error`
+  - 错误类型和错误对象
+- `com.textai.sdk.core`
+  - HTTP、SSE、JSON 等公共基础能力
+- `com.textai.sdk.openai`
+  - OpenAI 风格协议映射与解析
 
-See:
+这套结构方便后续继续演进出更多能力包，同时不破坏当前 `TextAiClient` 的纯文本定位。
 
-- `src/main/java/com/textai/sdk/demo/TextAiClientDemo.java`
-- `src/main/java/com/textai/sdk/demo/examples/*.java`
-
-The demo includes:
-
-- synchronous text request
-- synchronous delta streaming
-- asynchronous text request
-- asynchronous lifecycle-listener streaming
-
-The compatibility example suite adds focused examples for:
-
-- responses providers
-- chat/completions providers
-- gateway customization
-- responses stream listeners
-- retry plus metadata usage
-
-Set `AI_API_KEY` before running the demo.

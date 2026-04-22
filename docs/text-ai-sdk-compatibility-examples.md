@@ -1,110 +1,120 @@
-# Text AI SDK Compatibility Examples
+# Text AI SDK 兼容性示例说明
 
-This page collects the focused compatibility examples that ship with the SDK.
+这份文档汇总了 SDK 自带的兼容性示例，方便你快速判断：
 
-The goal of the suite is to answer one practical question quickly:
+> 哪个示例最适合我当前的 OpenAI-compatible 文本接入场景？
 
-> "Which example should I copy for my OpenAI-compatible text integration?"
-
-All examples live under:
+所有示例都位于：
 
 - `src/main/java/com/textai/sdk/demo/examples`
 
-They are intentionally small, heavily commented, and centered on one scenario each.
+它们有几个共同特点：
 
-## Example index
+- 文件小
+- 注释充分
+- 每个示例只聚焦一个场景
 
-### 1. `ResponsesProviderExample`
+---
 
-File:
+## 1. 示例目录
+
+### 1.1 `ResponsesProviderExample`
+
+文件：
 
 - `src/main/java/com/textai/sdk/demo/examples/ResponsesProviderExample.java`
 
-Use this when:
+适合场景：
 
-- your provider exposes `/v1/responses`
-- you want the smallest non-stream pure-text example
-- you want to see `responseId` and `model` extraction in a basic call
+- provider 暴露 `/v1/responses`
+- 你想看最小非流式纯文本示例
+- 你想了解 `responseId` 和 `model` 的基础读取方式
 
-### 2. `ChatCompletionsProviderExample`
+### 1.2 `ChatCompletionsProviderExample`
 
-File:
+文件：
 
 - `src/main/java/com/textai/sdk/demo/examples/ChatCompletionsProviderExample.java`
 
-Use this when:
+适合场景：
 
-- your provider expects `/v1/chat/completions`
-- you want a text-only system prompt plus user prompt example
-- you want to compare chat-style and responses-style integration
+- provider 走 `/v1/chat/completions`
+- 你想看 system prompt + user prompt 的文本示例
+- 你想对比 `chat/completions` 和 `responses` 两种接入方式
 
-### 3. `GatewayCustomizationExample`
+### 1.3 `GatewayCustomizationExample`
 
-File:
+文件：
 
 - `src/main/java/com/textai/sdk/demo/examples/GatewayCustomizationExample.java`
 
-Use this when:
+适合场景：
 
-- your OpenAI-compatible gateway needs a custom path
-- you must attach query parameters such as `api-version`
-- you must attach provider-specific headers
+- 你的网关需要自定义 path
+- 你需要附加 query 参数，例如 `api-version`
+- 你需要附加 provider 特定 header
 
-This is the example to copy for:
+这也是最适合以下场景复制的示例：
 
-- internal gateways
-- Azure-style compatibility layers
-- proxy routers with custom routing rules
+- 内部网关
+- Azure 风格兼容层
+- 带自定义路由规则的代理层
 
-### 4. `ResponsesStreamListenerExample`
+### 1.4 `ResponsesStreamListenerExample`
 
-File:
+文件：
 
 - `src/main/java/com/textai/sdk/demo/examples/ResponsesStreamListenerExample.java`
 
-Use this when:
+适合场景：
 
-- you need responses-style streaming
-- `DeltaCallback` is not enough
-- you want lifecycle hooks for:
-  - start
-  - delta
+- 你需要 `responses` 风格流式输出
+- 简单 `DeltaCallback` 已经不够用
+- 你希望拿到如下生命周期事件：
+  - 开始
+  - 增量文本
   - usage
-  - complete
-  - error
+  - 完成
+  - 错误
 
-This is the best example for GUI and observable stream integrations.
+这也是最适合 GUI 和可观测流式接入的示例。
 
-### 5. `RetryAndMetadataExample`
+### 1.5 `RetryAndMetadataExample`
 
-File:
+文件：
 
 - `src/main/java/com/textai/sdk/demo/examples/RetryAndMetadataExample.java`
 
-Use this when:
+适合场景：
 
-- you want non-stream retries for transient failures
-- you want to inspect provider metadata after a request
-- you are integrating the SDK into a production-oriented backend service
+- 你希望在非流式请求里启用瞬时错误重试
+- 你希望读取响应元数据
+- 你正在把 SDK 接入一个偏生产环境的后端服务
 
-## Environment variables used by the examples
+---
 
-The example suite reads:
+## 2. 示例使用的环境变量
+
+这些示例会读取：
 
 - `AI_API_KEY`
 - `AI_BASE_URL`
 - `AI_MODEL`
 
-Defaults:
+默认值：
 
-- `AI_BASE_URL` defaults to `http://127.0.0.1:48760`
-- `AI_MODEL` defaults to `gpt-5.4`
+- `AI_BASE_URL` 默认是 `http://127.0.0.1:48760`
+- `AI_MODEL` 默认是 `gpt-5.4`
 
-`AI_API_KEY` is required.
+其中：
 
-## Suggested reading order
+- `AI_API_KEY` 是必须的
 
-If you are new to the SDK:
+---
+
+## 3. 建议阅读顺序
+
+如果你是第一次接触这个 SDK，推荐顺序：
 
 1. `ResponsesProviderExample`
 2. `ChatCompletionsProviderExample`
@@ -112,14 +122,17 @@ If you are new to the SDK:
 4. `ResponsesStreamListenerExample`
 5. `RetryAndMetadataExample`
 
-This order moves from the smallest text call site to the more operational compatibility scenarios.
+这个顺序会从最小文本调用逐步过渡到更偏运维、兼容和生产化的场景。
 
-## Relationship to the main demo
+---
 
-The existing `TextAiClientDemo` remains the all-in-one walkthrough.
+## 4. 与主示例的关系
 
-The compatibility example suite is different:
+仓库里已有的 `TextAiClientDemo` 仍然保留，它更像一个综合演示。
 
-- each file focuses on one integration scenario
-- each file is easier to copy into a real project
-- each file maps to one OpenAI-compatible compatibility question
+而兼容性示例套件的定位不同：
+
+- 每个文件只聚焦一个场景
+- 每个文件都更适合直接复制进真实项目
+- 每个文件都对应一个具体的兼容性问题
+

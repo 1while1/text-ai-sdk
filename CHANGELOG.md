@@ -1,29 +1,29 @@
-# Changelog
+# 更新记录
 
-All notable changes to `text-ai-sdk` are documented in this file.
+`text-ai-sdk` 的重要变更记录保存在此文件中。
 
 ## 1.0.0-SNAPSHOT
 
-### Added
+### 新增
 
-- pure-text `TextAiClient` facade for `/v1/chat/completions` and `/v1/responses`
-- strict text-only parsing with typed SDK errors
-- sync, async, stream, and async-stream APIs
-- `TextStreamListener` lifecycle callbacks for start, delta, usage, complete, and error events
-- transport customization through endpoint path overrides, query parameters, and extra headers
-- response metadata exposure via `responseId`, `model`, and raw headers
-- opt-in retry policy for transient non-stream failures
-- compatibility example suite for provider and gateway scenarios
+- 面向 `/v1/chat/completions` 和 `/v1/responses` 的纯文本 `TextAiClient` 门面
+- 严格的纯文本解析与类型化错误模型
+- 同步、异步、流式、异步流式调用能力
+- `TextStreamListener` 生命周期回调，支持开始、增量文本、usage、完成、错误
+- 通过 endpoint path override、query 参数和额外请求头实现的传输层定制能力
+- 通过 `responseId`、`model` 和原始响应头暴露的响应元数据
+- 可选的非流式瞬时错误重试策略
+- 面向 provider 和 gateway 场景的兼容性示例套件
 
-### Changed
+### 调整
 
-- public package structure was reorganized into `text`, `error`, `core`, and `openai`
-- listener-based streaming APIs now use explicit method names to avoid `null` overload ambiguity
-- demo coverage now includes async lifecycle-listener streaming
+- 公开源码结构按 `text`、`error`、`core`、`openai` 四层重组
+- 基于 listener 的流式 API 使用明确的方法名，避免 `null` 重载二义性
+- demo 现已覆盖异步 listener 流式示例
 
-### Known Limits
+### 已知边界
 
-- this package is intentionally limited to pure text requests and text responses
-- stream retries are not implemented
-- tool calling, multimodal inputs, and structured output contracts are intentionally out of scope for this module
-- public-release metadata such as license and SCM coordinates still needs maintainer-provided values before publishing to a public Maven repository
+- 当前模块有意限制在纯文本请求与纯文本响应
+- 尚未实现流式重试
+- tool calling、多模态、结构化输出协议当前明确不在此模块范围内
+- 若要发布到公共 Maven 仓库，仍需维护者补齐 license、SCM 等公开元数据
